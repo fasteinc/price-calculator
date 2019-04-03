@@ -57,16 +57,6 @@ const globalLines = [
     displayTemplate: '{{line.name}} {{line.payload.value}}%               {{displayValue}} {{ currency.symbol }}',
   },
   {
-    name: 'VAT',
-    key: 'vat',
-    payload: {
-      value: '20',
-    },
-    computeValue: 'value * (line.payload.value / 100 + 1)',
-    computeDisplay: 'line.payload.value / 100 * value',
-    displayTemplate: '{{line.name}} {{line.payload.value}}%               {{displayValue}} {{ currency.symbol }}',
-  },
-  {
     name: 'total',
     key: 'total',
     computeValue: 'value',
@@ -88,24 +78,22 @@ const basicQuoteValues = {
   ht: { displayValue: 120, value: 120 },
   margin: { displayValue: 20.7, value: 138 },
   fakeht: { displayValue: 138, value: 138 },
-  promo: { displayValue: '25', value: 113 },
-  vat: { displayValue: 32.544000000000004, value: 162.72 },
-  total: { displayValue: 162.72, value: 162.72 },
-  deposit: { displayValue: 16.272000000000002, value: 162.72 },
+  promo: { displayValue: 25, value: 113 },
+  vat: { displayValue: 27.12, value: 135.6 },
+  total: { displayValue: 135.6, value: 135.6 },
+  deposit: { displayValue: 13.56, value: 135.6 },
 };
 
-const basicQuoteDisplay = {
-  deposit: 'deposit 10%               16.272000000000002 $',
-  fakeht: 'HT                 138 $',
+const basicQuoteDisplay = { fakeht: 'HT                 138 $',
   promo: 'reduction                 - 25 $',
-  total: 'total               162.72 $',
-  vat: 'VAT 20%               32.544000000000004 $',
+  vat: 'VAT 20%               27.12 $',
+  total: 'total               135.6 $',
+  deposit: 'deposit 10%               13.56 $',
 };
 
 describe(' basic quote test', function () {
   it('compute values', function () {
-    const res = compute(globalLines, { context: { quote } });
-
+    const res = compute(globalLines, { context: { quote }, beforeSave: value => Math.ceil(value * 100) / 100 });
     expect(res).to.deep.equal(basicQuoteValues);
   });
   it('compute display', function () {
