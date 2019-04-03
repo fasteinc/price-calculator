@@ -23,9 +23,10 @@ const defaultKeyExtractor = ({ key }) => key;
  * @param       {Object}    [opts.context={}]               context for mathjs eval, if `value` key is used
  *                                                          she will be overrided after the first computing
  * @param       {Function}  [keyExtractor=defaultKeyExtractor]  function for select the key where store the result receive the line in parameter
+ * @param       {Function}  [beforeSave]                  function for transform value (e.g. rounding) before save
  * @return      {Object}                                    resulting value and displayValue stored under theirs own line key
  */
-const compute = (lines, { context = {}, keyExtractor = defaultKeyExtractor } = {}) => {
+const compute = (lines, { context = {}, keyExtractor = defaultKeyExtractor, beforeSave = value => value } = {}) => {
   const ctx = { ...context, value: context.value || 0 };
   const results = {};
 
@@ -37,11 +38,12 @@ const compute = (lines, { context = {}, keyExtractor = defaultKeyExtractor } = {
     const key = keyExtractor(line);
     ctx.line = line;
     ctx.result = computeValue ? math.eval(computeValue, ctx) : ctx.value;
+    ctx.result = beforeSave(ctx.result);
     ctx.value = ctx.result;
     const displayValue = computeDisplay ? math.eval(computeDisplay, ctx) : ctx.value;
 
     results[key] = {
-      displayValue,
+      displayValue: beforeSave(displayValue),
       value: ctx.value,
     };
   });
