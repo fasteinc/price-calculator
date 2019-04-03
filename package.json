@@ -1,0 +1,21 @@
+{
+  "name": "price-calculator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha index.test.js",
+    "test:watch": "mocha --watch index.test.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chai": "^4.2.0",
+    "mathjs": "^5.8.0",
+    "mocha": "^6.0.2",
+    "mustache": "^3.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0"
+  }
+}
