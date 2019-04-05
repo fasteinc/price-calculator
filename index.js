@@ -22,67 +22,65 @@ const defaultKeyExtractor = ({ key }) => key;
  * @param       {Object}    [opts={}]
  * @param       {Object}    [opts.context={}]               context for mathjs eval, if `value` key is used
  *                                                          she will be overrided after the first computing
- * @param       {Function}  [keyExtractor=defaultKeyExtractor]  function for select the key where store the result receive the line in parameter
  * @param       {Function}  [beforeSave]                  function for transform value (e.g. rounding) before save
  * @return      {Object}                                    resulting value and displayValue stored under theirs own line key
  */
-const compute = (lines, { context = {}, keyExtractor = defaultKeyExtractor, beforeSave = value => value } = {}) => {
+const compute = (lines, { context = {}, beforeSave = value => value } = {}) => {
   const ctx = { ...context, value: context.value || 0 };
-  const results = {};
-
-  lines.forEach((line) => {
+  const results = [];
+  for (const line of lines) {
     const {
       computeValue,
       computeDisplay,
     } = line;
-    const key = keyExtractor(line);
-    ctx.line = line;
-    ctx.result = computeValue ? math.eval(computeValue, ctx) : ctx.value;
-    ctx.result = beforeSave(ctx.result);
-    ctx.value = ctx.result;
-    const displayValue = computeDisplay ? math.eval(computeDisplay, ctx) : ctx.value;
+    try {
+      ctx.line = line;
+      ctx.result = computeValue ? math.eval(computeValue, ctx) : ctx.value;
+      ctx.result = beforeSave(ctx.result);
+      const displayValue = computeDisplay ? beforeSave(math.eval(computeDisplay, ctx)) : null;
+      ctx.value = ctx.result;
 
-    results[key] = {
-      displayValue: beforeSave(displayValue),
-      value: ctx.value,
-    };
-  });
+      results.push({
+        ...line,
+        displayValue,
+        value: ctx.value,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+  };
 
+  results._totalPrice = ctx.value;
   return results;
 };
 
 /**
  * @function    computeDisplays
- * @description compute line text's to display
+ * @description compute line text's to display current line will be added under `line` key in the context don't use it
  * @param       {Line[]}            lines                             Array of {@link Line}
  * @param       {Object}            [opts={}]
  * @param       {Object}            [opts.context={}]                 mustache context
- * @param       {Object}            [opts.contexts={}]                context in the key returned by `keyExtractor`
- *                                                                      will be added to the global context
- * @param       {Function}          [opts.keyExtractor=defaultKeyExtractor] function for select the key where store
- *                                                                    the result and read the context receive the line in parameter
- * @return      {Object}                                              Line text stored under the key returned by `keyExtractor`
+ * @return      {Object}                                              Line text array
  */
-const computeDisplays = (
-  lines,
-  {
-    context = {},
-    contexts = {},
-    keyExtractor = defaultKeyExtractor,
-  } = {}) => {
-  const results = {};
+const computeDisplays = (lines, { context = {} } = {}) => {
+  const results = [];
 
   lines.forEach((line) => {
     const {
-      hidden,
+      visible,
       displayTemplate,
     } = line;
-    if (hidden) return;
+    const ctx = { ...context, line };
 
-    const key = keyExtractor(line);
-    const ctx = { ...context, ...(contexts[key] || {}), line };
-
-    results[key] = displayTemplate ? mustache.render(displayTemplate, ctx) : ctx.displayValue;
+    try {
+      if (!visible) return;
+      results.push({
+        ...line,
+        displayTitle: displayTemplate ? mustache.render(displayTemplate, ctx) : '',
+      });
+    } catch (e) {
+      console.warn(e);
+    }
   });
 
   return results;
