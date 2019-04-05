@@ -1,105 +1,308 @@
+const { diff } = require('deep-object-diff');
 const { computeDisplays, compute } = require('./');
 const { expect } = require('chai');
 
-const quote = {
-  deposit: 10,
-  tva: 22,
-  price: 120,
-  margin: 15,
-  reduction: 15,
-};
 
 const currency = {
   symbol: '$',
 };
 
-const globalLines = [
+const offerLines  =[
   {
     name: 'HT',
-    key: 'ht',
-    computeValue: 'quote.price',
-    computeDisplay: 'quote.price',
-    hidden: true,
+    computeValue: 'offer.price',
+    computeDisplay: 'offer.price',
   },
   {
     name: 'margin',
-    key: 'margin',
-    payload: {},
-    computeValue: '(quote.margin / 100 + 1) * value',
-    computeDisplay: '(quote.margin / 100) * value',
-    hidden: true,
+    action: { payload: { value: 5 } },
+    computeDisplay: 'offer.margin / 100 * value',
+    computeValue: '(offer.margin / 100 + 1) * value',
   },
   {
-    name: 'fakeHT',
-    key: 'fakeht',
-    computeValue: 'value',
+    name: 'newht',
+    visible: true,
+    endpoint: '/global/shared_config/payment/default/newht',
     computeDisplay: 'value',
-    displayTemplate: 'HT                 {{displayValue}} {{ currency.symbol }}',
-  },
-  {
-    name: 'promo',
-    key: 'promo',
-    payload: {
-      value: '25',
-    },
-    computeValue: 'value - line.payload.value',
-    computeDisplay: 'line.payload.value',
-    displayTemplate: 'reduction                 - {{displayValue}} {{ currency.symbol }}',
-  },
-  {
-    name: 'VAT',
-    key: 'vat',
-    payload: {
-      value: '20',
-    },
-    computeValue: 'value * (line.payload.value / 100 + 1)',
-    computeDisplay: 'line.payload.value / 100 * value',
-    displayTemplate: '{{line.name}} {{line.payload.value}}%               {{displayValue}} {{ currency.symbol }}',
-  },
-  {
-    name: 'total',
-    key: 'total',
     computeValue: 'value',
-    displayTemplate: '{{line.name}}               {{displayValue}} {{ currency.symbol }}',
-  },
-  {
-    name: 'deposit',
-    key: 'deposit',
-    payload: {
-      value: '10',
-    },
-    computeValue: 'value',
-    computeDisplay: 'line.payload.value / 100 * value',
-    displayTemplate: '{{line.name}} {{line.payload.value}}%               {{displayValue}} {{ currency.symbol }}',
+    displayTemplate: 'HT',
   },
 ];
 
-const basicQuoteValues = {
-  ht: { displayValue: 120, value: 120 },
-  margin: { displayValue: 20.7, value: 138 },
-  fakeht: { displayValue: 138, value: 138 },
-  promo: { displayValue: 25, value: 113 },
-  vat: { displayValue: 27.12, value: 135.6 },
-  total: { displayValue: 135.6, value: 135.6 },
-  deposit: { displayValue: 13.56, value: 135.6 },
+const quote = {
+  deposit: 10,
+  vat: 22,
+  price: 120,
+  margin: 15,
+  reduction: 15,
+  offers: [
+    {
+      name: 'Six Bedrooms - 7 to 11 June ',
+      description: '',
+      visible: true,
+      price: 10600,
+      deposit: 0,
+      commission: 0,
+      currency: {
+        iso: 'EUR',
+        isoNum: '978',
+        name: 'Euro',
+        symbol: '€',
+        subUnit: 'cent',
+        id: '5a5a4cb9b3079f003baccdfd',
+      },
+      options: [
+        {
+          name: 'Six Bedroom - FASTE Residence ',
+          included: true,
+        },
+        {
+          name: 'Driver',
+          price: 50,
+          included: false,
+        },
+      ],
+    },
+  ],
 };
 
-const basicQuoteDisplay = { fakeht: 'HT                 138 $',
-  promo: 'reduction                 - 25 $',
-  vat: 'VAT 20%               27.12 $',
-  total: 'total               135.6 $',
-  deposit: 'deposit 10%               13.56 $',
-};
+const offerComputedValues = [
+  { name: 'HT',
+    computeValue: 'offer.price',
+    computeDisplay: 'offer.price',
+    displayValue: 10600,
+    value: 10600,
+  },
+  {
+    name: 'newht',
+    visible: true,
+    endpoint: '/global/shared_config/payment/default/newht',
+    computeDisplay: 'value',
+    computeValue: 'value',
+    displayTemplate: 'HT',
+    displayValue: 10600,
+    value: 10600,
+  },
+];
+offerComputedValues._totalPrice = 10600;
+
+const offerDisplayValues = [
+  {
+    name: 'newht',
+    visible: true,
+    endpoint: '/global/shared_config/payment/default/newht',
+    computeDisplay: 'value',
+    computeValue: 'value',
+    displayTemplate: 'HT',
+    displayValue: 10600,
+    value: 10600,
+    displayTitle: 'HT',
+  },
+];
+
+describe(' basic offer test', function () {
+  it('compute values', function () {
+    const res = compute(offerLines, { context: { offer: quote.offers[0] }, beforeSave: value => Number(Number(value).toFixed(5)) });
+    expect(diff(offerComputedValues, res)).to.be.deep.equal({});
+  });
+  it('compute display', function () {
+    const displayRes = computeDisplays(offerComputedValues, { context: { offer: quote.offers[0], currency } });
+    expect(diff(offerDisplayValues, displayRes)).to.be.deep.equal({});
+
+  });
+
+});
+
+const quoteLines = [
+  {
+    name: 'HT',
+    computeValue: 'value',
+  },
+  {
+    name: 'margin',
+    payload: {},
+    computeValue: '(quote.margin / 100 + 1) * value',
+    computeDisplay: '(quote.margin / 100) * value',
+  },
+  {
+    name: 'fakeHT',
+    computeValue: 'value',
+    computeDisplay: 'value',
+    displayTemplate: 'HT',
+    visible: true,
+  },
+  {
+    name: 'promo',
+    payload: {
+      value: 25,
+    },
+    computeValue: 'value - line.payload.value',
+    computeDisplay: 'line.payload.value',
+    displayTemplate: 'reduction',
+    visible: true,
+  },
+  {
+    name: 'VAT',
+    computeValue: 'value * (quote.vat / 100 + 1)',
+    computeDisplay: 'quote.vat / 100 * value',
+    displayTemplate: '{{line.name}} {{quote.vat}}%',
+    visible: true,
+  },
+  {
+    name: 'total',
+    computeValue: 'value',
+    computeDisplay: 'value',
+    displayTemplate: '{{line.name}}',
+    visible: true,
+  },
+  {
+    name: 'deposit',
+    payload: {
+      value:10,
+    },
+    computeValue: 'value',
+    computeDisplay: 'line.payload.value / 100 * value',
+    displayTemplate: '{{line.name}} {{line.payload.value}}%',
+    visible: true,
+  },
+];
+
+const quoteComputedValues =  [
+  {
+    name: 'HT',
+    computeValue: 'value',
+    value: 120,
+    displayValue: null,
+  },
+  {
+    name: 'margin',
+    payload: {},
+    computeValue: '(quote.margin / 100 + 1) * value',
+    computeDisplay: '(quote.margin / 100) * value',
+    displayValue:18,
+    value: 138,
+  },
+  {
+    name: 'fakeHT',
+    computeValue: 'value',
+    computeDisplay: 'value',
+    displayTemplate: 'HT',
+    displayValue: 138,
+    value: 138,
+    visible: true,
+  },
+  {
+    name: 'promo',
+    payload: {
+      value: 25,
+    },
+    computeValue: 'value - line.payload.value',
+    computeDisplay: 'line.payload.value',
+    displayTemplate: 'reduction',
+    displayValue: 25,
+    value: 113,
+    visible: true,
+  },
+  {
+    name: 'VAT',
+    computeValue: 'value * (quote.vat / 100 + 1)',
+    computeDisplay: 'quote.vat / 100 * value',
+    displayTemplate: '{{line.name}} {{quote.vat}}%',
+    displayValue: 24.86,
+    value: 137.86,
+    visible: true,
+  },
+  {
+    name: 'total',
+    computeValue: 'value',
+    computeDisplay: 'value',
+    displayTemplate: '{{line.name}}',
+    displayValue: 137.86,
+    value: 137.86,
+    visible: true,
+  },
+  {
+    name: 'deposit',
+    payload: {
+      value: 10,
+    },
+    computeValue: 'value',
+    computeDisplay: 'line.payload.value / 100 * value',
+    displayTemplate: '{{line.name}} {{line.payload.value}}%',
+    displayValue: 13.78600,
+    value: 137.86,
+    visible: true,
+  },
+];
+quoteComputedValues._totalPrice = 137.86;
+
+const quoteDisplayValues =  [
+  {
+    name: 'fakeHT',
+    computeValue: 'value',
+    computeDisplay: 'value',
+    displayTemplate: 'HT',
+    value: 138,
+    displayTitle: 'HT',
+    displayValue: 138,
+    visible: true,
+  },
+  {
+    name: 'promo',
+    payload: {
+      value: 25,
+    },
+    computeValue: 'value - line.payload.value',
+    computeDisplay: 'line.payload.value',
+    displayTemplate: 'reduction',
+    displayValue: 25,
+    value: 113,
+    displayTitle: 'reduction',
+    visible: true,
+  },
+  {
+    name: 'VAT',
+    computeValue: 'value * (quote.vat / 100 + 1)',
+    computeDisplay: 'quote.vat / 100 * value',
+    displayTemplate: '{{line.name}} {{quote.vat}}%',
+    displayValue: 24.86,
+    value: 137.86,
+    displayTitle: 'VAT 22%',
+    visible: true,
+  },
+  {
+    name: 'total',
+    computeValue: 'value',
+    computeDisplay: 'value',
+    displayTemplate: '{{line.name}}',
+    displayValue: 137.86,
+    value: 137.86,
+    displayTitle: 'total',
+    visible: true,
+  },
+  {
+    name: 'deposit',
+    payload: {
+      value: 10,
+    },
+    computeValue: 'value',
+    computeDisplay: 'line.payload.value / 100 * value',
+    displayTemplate: '{{line.name}} {{line.payload.value}}%',
+    displayValue: 13.786,
+    value: 137.86,
+    displayTitle: 'deposit 10%',
+    visible: true,
+  },
+];
 
 describe(' basic quote test', function () {
   it('compute values', function () {
-    const res = compute(globalLines, { context: { quote }, beforeSave: value => Math.ceil(value * 100) / 100 });
-    expect(res).to.deep.equal(basicQuoteValues);
+    const res = compute(quoteLines, { context: { quote, value: quote.price }, beforeSave: value => Number(Number(value).toFixed(5)) });
+    expect(diff(quoteComputedValues, res)).to.be.deep.equal({});
   });
   it('compute display', function () {
-    const displayRes = computeDisplays(globalLines, { context: { quote, currency }, contexts: basicQuoteValues });
-
-    expect(displayRes).to.deep.equal(basicQuoteDisplay);
+    const displayRes = computeDisplays(quoteComputedValues, { context: { quote } });
+    expect(diff(quoteDisplayValues, displayRes)).to.be.deep.equal({});
   });
 
 });
