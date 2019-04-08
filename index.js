@@ -86,7 +86,26 @@ const computeDisplays = (lines, { context = {} } = {}) => {
   return results;
 };
 
+const getConfigTag = async (findOneByEndpoint, categoryEndpoint, role, params) => {
+  let configTag;
+  if (categoryEndpoint) {
+    try {
+      configTag = await findOneByEndpoint(`${categoryEndpoint}/payment/${role}`, params);
+    } catch (e) {}
+  }
+  if (!configTag) {
+    try {
+      configTag = await findOneByEndpoint(`/global/shared_config/payment/${role}`, params);
+    } catch (e) {}
+  }
+  if (!configTag) {
+    configTag = await findOneByEndpoint('/global/shared_config/payment/default', params);
+  }
+  return configTag;
+};
+
 module.exports.default = module.exports = {
   compute,
+  getConfigTag,
   computeDisplays,
 };
