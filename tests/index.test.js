@@ -1,5 +1,5 @@
 const { diff } = require('deep-object-diff');
-const { computeDisplays, compute } = require('./');
+const { computeDisplays, compute } = require('../');
 const { expect } = require('chai');
 
 
