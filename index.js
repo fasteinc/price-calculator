@@ -7,7 +7,7 @@ const mustache = require('mustache');
  * @property {string} computeValue - mathjs template for computing next value
  * @property {string} [computeDisplay] - mathjs template for computing displayValue
  *                                        if missing value will be stored in displayValue too
- * @property {string} [hidden] - if true no computeDisplay  result will be generated for this line
+ * @property {string} [visible] - if false no computeDisplay  result will be generated for this line
  * @property {string} [displayTemplate] - mustache template for generating displaysResults
  */
 
@@ -30,6 +30,7 @@ const compute = (lines, { context = {}, beforeSave = value => value } = {}) => {
       computeValue,
       computeDisplay,
     } = line;
+
     try {
       ctx.line = line;
       ctx.result = computeValue ? math.eval(computeValue, ctx) : ctx.value;
